@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Just-Browse Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hello, Just-Browse!</h1>
+        <p>This is a test page for the Just-Browse browser engine.</p>
+        <p id="dynamic-content">JavaScript will update this content.</p>
+        <button onclick="updateContent()">Click Me</button>
+    </div>
+
+    <script>
+        function updateContent() {
+            var elem = document.getElementById('dynamic-content');
+            elem.innerHTML = 'Content updated at ' + new Date().toLocaleTimeString();
+        }
+
+        console.log('Just-Browse example page loaded!');
+    </script>
+</body>
+</html>

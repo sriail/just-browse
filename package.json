@@ -1,0 +1,23 @@
+{
+  "name": "just-browse",
+  "version": "0.1.0",
+  "description": "A basic browser engine built for WebAssembly",
+  "main": "dist/just-browse.js",
+  "scripts": {
+    "build": "mkdir -p build && cd build && cmake .. && make",
+    "build:wasm": "mkdir -p build-wasm && cd build-wasm && emcmake cmake .. -DBUILD_WASM=ON && emmake make",
+    "test": "cd build && ctest --output-on-failure",
+    "clean": "rm -rf build build-wasm dist"
+  },
+  "keywords": [
+    "browser",
+    "wasm",
+    "webassembly",
+    "rendering",
+    "quickjs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

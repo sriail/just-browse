@@ -30,13 +30,16 @@ target_include_directories(just-browse-core PUBLIC
     ${CMAKE_SOURCE_DIR}/include
 )
 
+# Link QuickJS
+target_link_libraries(just-browse-core PUBLIC quickjs)
+
 # Platform-specific linking
 if(BUILD_WASM)
     # WASM-specific settings
     target_compile_definitions(just-browse-core PUBLIC BUILD_WASM=1)
 else()
     # Native build settings
-    target_link_libraries(just-browse-core PUBLIC m)
+    target_link_libraries(just-browse-core PUBLIC m pthread dl)
 endif()
 
 # Create main executable for testing

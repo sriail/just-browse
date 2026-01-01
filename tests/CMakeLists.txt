@@ -19,3 +19,14 @@ target_link_libraries(test_engine
 )
 
 add_test(NAME EngineTest COMMAND test_engine)
+
+# JavaScript integration test
+add_executable(test_js_integration
+    test_js_integration.c
+)
+
+target_link_libraries(test_js_integration
+    just-browse-core
+)
+
+add_test(NAME JSIntegrationTest COMMAND test_js_integration)

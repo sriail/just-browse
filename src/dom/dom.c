@@ -2,6 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Event listener structure
+typedef struct EventListener {
+    char* event_type;
+    DOMEventCallback callback;
+    void* user_data;
+    struct EventListener* next;
+} EventListener;
+
 // Internal structures
 struct DOMNode {
     DOMNodeType type;
@@ -20,6 +28,9 @@ struct DOMNode {
         int attr_count;
         int attr_capacity;
     } attributes;
+    
+    // Event listeners
+    EventListener* event_listeners;
 };
 
 struct DOMElement {
@@ -69,6 +80,15 @@ static void dom_node_destroy_recursive(DOMNode* node) {
     free(node->attributes.attr_names);
     free(node->attributes.attr_values);
 
+    // Free event listeners
+    EventListener* listener = node->event_listeners;
+    while (listener) {
+        EventListener* next = listener->next;
+        free(listener->event_type);
+        free(listener);
+        listener = next;
+    }
+
     // Free node data
     free(node->name);
     free(node->value);
@@ -114,6 +134,9 @@ DOMElement* dom_document_create_element(DOMDocument* doc, const char* tag_name) 
         free(element);
         return NULL;
     }
+    
+    // Initialize event listeners
+    element->node.event_listeners = NULL;
 
     // Set as document element if this is the first element
     if (!doc->document_element) {
@@ -133,14 +156,41 @@ DOMElement* dom_document_get_element(DOMDocument* doc) {
     return doc->document_element;
 }
 
+// Helper function to search for element by ID recursively
+static DOMElement* search_element_by_id(DOMNode* node, const char* id) {
+    if (!node) {
+        return NULL;
+    }
+
+    // Check if this is an element with matching ID
+    if (node->type == NODE_ELEMENT) {
+        DOMElement* elem = (DOMElement*)node;
+        const char* elem_id = dom_element_get_attribute(elem, "id");
+        if (elem_id && strcmp(elem_id, id) == 0) {
+            return elem;
+        }
+    }
+
+    // Search children
+    DOMNode* child = node->first_child;
+    while (child) {
+        DOMElement* found = search_element_by_id(child, id);
+        if (found) {
+            return found;
+        }
+        child = child->next_sibling;
+    }
+
+    return NULL;
+}
+
 DOMElement* dom_document_get_element_by_id(DOMDocument* doc, const char* id) {
     if (!doc || !id) {
         return NULL;
     }
 
-    // Simple recursive search (would need optimization for real use)
-    // For now, return NULL as this is a basic implementation
-    return NULL;
+    // Start searching from document element
+    return search_element_by_id(&doc->node, id);
 }
 
 int dom_node_append_child(DOMNode* parent, DOMNode* child) {
@@ -273,4 +323,45 @@ int dom_element_set_inner_html(DOMElement* element, const char* html) {
     }
     
     return dom_node_append_child(&element->node, text_node);
+}
+
+int dom_element_add_event_listener(DOMElement* element, const char* event_type,
+                                    DOMEventCallback callback, void* user_data) {
+    if (!element || !event_type || !callback) {
+        return -1;
+    }
+
+    EventListener* listener = (EventListener*)malloc(sizeof(EventListener));
+    if (!listener) {
+        return -1;
+    }
+
+    listener->event_type = strdup(event_type);
+    if (!listener->event_type) {
+        free(listener);
+        return -1;
+    }
+
+    listener->callback = callback;
+    listener->user_data = user_data;
+    listener->next = element->node.event_listeners;
+    element->node.event_listeners = listener;
+
+    return 0;
+}
+
+int dom_element_trigger_event(DOMElement* element, const char* event_type) {
+    if (!element || !event_type) {
+        return -1;
+    }
+
+    EventListener* listener = element->node.event_listeners;
+    while (listener) {
+        if (strcmp(listener->event_type, event_type) == 0) {
+            listener->callback(element, listener->user_data);
+        }
+        listener = listener->next;
+    }
+
+    return 0;
 }

@@ -100,6 +100,30 @@ const char* dom_element_get_tag_name(DOMElement* element);
  */
 int dom_element_set_inner_html(DOMElement* element, const char* html);
 
+/**
+ * Event callback type
+ */
+typedef void (*DOMEventCallback)(DOMElement* element, void* user_data);
+
+/**
+ * Add an event listener to an element
+ * @param element The element
+ * @param event_type The event type (e.g., "click", "change")
+ * @param callback The callback function
+ * @param user_data User data to pass to callback
+ * @return 0 on success, -1 on failure
+ */
+int dom_element_add_event_listener(DOMElement* element, const char* event_type, 
+                                    DOMEventCallback callback, void* user_data);
+
+/**
+ * Trigger an event on an element
+ * @param element The element
+ * @param event_type The event type
+ * @return 0 on success, -1 on failure
+ */
+int dom_element_trigger_event(DOMElement* element, const char* event_type);
+
 #ifdef __cplusplus
 }
 #endif

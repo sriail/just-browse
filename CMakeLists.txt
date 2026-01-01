@@ -27,6 +27,13 @@ endif()
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/third_party/quickjs)
+
+# QuickJS library
+add_library(quickjs STATIC IMPORTED)
+set_target_properties(quickjs PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/third_party/quickjs/libquickjs.a
+)
 
 # Enable testing
 if(BUILD_TESTS)

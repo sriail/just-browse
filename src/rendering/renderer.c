@@ -12,7 +12,7 @@ struct Renderer {
     int width;
     int height;
     unsigned char* buffer;
-    int buffer_size;
+    size_t buffer_size;
 };
 
 Renderer* renderer_init(int width, int height) {
@@ -43,7 +43,7 @@ Renderer* renderer_init(int width, int height) {
         return NULL;
     }
     
-    renderer->buffer_size = (int)buffer_size;
+    renderer->buffer_size = buffer_size;
     renderer->buffer = (unsigned char*)calloc(buffer_size, 1);
 
     if (!renderer->buffer) {
@@ -115,7 +115,7 @@ int renderer_resize(Renderer* renderer, int width, int height) {
     renderer->width = width;
     renderer->height = height;
     renderer->buffer = new_buffer;
-    renderer->buffer_size = (int)new_size;
+    renderer->buffer_size = new_size;
 
     return 0;
 }

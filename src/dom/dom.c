@@ -39,6 +39,10 @@ DOMDocument* dom_document_create(void) {
 
     doc->node.type = NODE_DOCUMENT;
     doc->node.name = strdup("document");
+    if (!doc->node.name) {
+        free(doc);
+        return NULL;
+    }
     doc->document_element = NULL;
 
     return doc;
@@ -93,6 +97,10 @@ DOMElement* dom_document_create_element(DOMDocument* doc, const char* tag_name) 
 
     element->node.type = NODE_ELEMENT;
     element->node.name = strdup(tag_name);
+    if (!element->node.name) {
+        free(element);
+        return NULL;
+    }
     
     // Initialize attributes
     element->node.attributes.attr_capacity = 8;
@@ -173,8 +181,12 @@ int dom_element_set_attribute(DOMElement* element, const char* name, const char*
     // Check if attribute already exists
     for (int i = 0; i < node->attributes.attr_count; i++) {
         if (strcmp(node->attributes.attr_names[i], name) == 0) {
+            char* new_value = strdup(value);
+            if (!new_value) {
+                return -1;
+            }
             free(node->attributes.attr_values[i]);
-            node->attributes.attr_values[i] = strdup(value);
+            node->attributes.attr_values[i] = new_value;
             return 0;
         }
     }
@@ -195,6 +207,14 @@ int dom_element_set_attribute(DOMElement* element, const char* name, const char*
 
     node->attributes.attr_names[node->attributes.attr_count] = strdup(name);
     node->attributes.attr_values[node->attributes.attr_count] = strdup(value);
+    
+    if (!node->attributes.attr_names[node->attributes.attr_count] || 
+        !node->attributes.attr_values[node->attributes.attr_count]) {
+        free(node->attributes.attr_names[node->attributes.attr_count]);
+        free(node->attributes.attr_values[node->attributes.attr_count]);
+        return -1;
+    }
+    
     node->attributes.attr_count++;
 
     return 0;
@@ -247,6 +267,10 @@ int dom_element_set_inner_html(DOMElement* element, const char* html) {
 
     text_node->type = NODE_TEXT;
     text_node->value = strdup(html);
+    if (!text_node->value) {
+        free(text_node);
+        return -1;
+    }
     
     return dom_node_append_child(&element->node, text_node);
 }

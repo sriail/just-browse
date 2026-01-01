@@ -2,6 +2,7 @@
 #include "dom/dom.h"
 #include "js/js_engine.h"
 #include "rendering/renderer.h"
+#include "html/parser.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -80,17 +81,8 @@ int browser_engine_load_html(BrowserEngine* engine, const char* html) {
         return -1;
     }
 
-    // Get or create root element
-    DOMElement* root = dom_document_get_element(engine->document);
-    if (!root) {
-        root = dom_document_create_element(engine->document, "html");
-        if (!root) {
-            return -1;
-        }
-    }
-
-    // Set the HTML content (basic implementation)
-    return dom_element_set_inner_html(root, html);
+    // Use the HTML parser to create the DOM tree
+    return html_parser_parse(engine->document, html);
 }
 
 int browser_engine_execute_script(BrowserEngine* engine, const char* script) {

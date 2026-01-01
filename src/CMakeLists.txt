@@ -15,12 +15,17 @@ set(RENDERING_SOURCES
     rendering/renderer.c
 )
 
+set(HTML_SOURCES
+    html/parser.c
+)
+
 # Combine all sources
 set(ALL_SOURCES
     ${CORE_SOURCES}
     ${DOM_SOURCES}
     ${JS_SOURCES}
     ${RENDERING_SOURCES}
+    ${HTML_SOURCES}
 )
 
 # Create the main library

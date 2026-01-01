@@ -30,3 +30,14 @@ target_link_libraries(test_js_integration
 )
 
 add_test(NAME JSIntegrationTest COMMAND test_js_integration)
+
+# HTML parser test
+add_executable(test_html_parser
+    test_html_parser.c
+)
+
+target_link_libraries(test_html_parser
+    just-browse-core
+)
+
+add_test(NAME HTMLParserTest COMMAND test_html_parser)

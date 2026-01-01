@@ -15,9 +15,11 @@ struct JSEngine {
 // Forward declarations for DOM bindings
 static JSValue js_document_create_element(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_document_get_element_by_id(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_document_query_selector(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_element_set_attribute(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_element_get_attribute(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_element_set_inner_html(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_element_query_selector(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_console_log(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
 JSEngine* js_engine_init(void) {
@@ -90,6 +92,8 @@ int js_engine_bind_dom(JSEngine* engine, DOMDocument* document) {
                      JS_NewCFunction(engine->context, js_document_create_element, "createElement", 1));
     JS_SetPropertyStr(engine->context, doc_obj, "getElementById",
                      JS_NewCFunction(engine->context, js_document_get_element_by_id, "getElementById", 1));
+    JS_SetPropertyStr(engine->context, doc_obj, "querySelector",
+                     JS_NewCFunction(engine->context, js_document_query_selector, "querySelector", 1));
 
     // Set as global document
     JS_SetPropertyStr(engine->context, global, "document", doc_obj);
@@ -184,6 +188,8 @@ static JSValue js_document_create_element(JSContext *ctx, JSValueConst this_val,
                      JS_NewCFunction(ctx, js_element_set_attribute, "setAttribute", 2));
     JS_SetPropertyStr(ctx, elem_obj, "getAttribute",
                      JS_NewCFunction(ctx, js_element_get_attribute, "getAttribute", 1));
+    JS_SetPropertyStr(ctx, elem_obj, "querySelector",
+                     JS_NewCFunction(ctx, js_element_query_selector, "querySelector", 1));
     
     // Add innerHTML property setter/getter
     JSValue set_inner_html = JS_NewCFunction(ctx, js_element_set_inner_html, "set innerHTML", 1);
@@ -319,4 +325,95 @@ static JSValue js_element_set_inner_html(JSContext *ctx, JSValueConst this_val, 
     JS_FreeCString(ctx, html);
 
     return result == 0 ? JS_UNDEFINED : JS_EXCEPTION;
+}
+
+static JSValue js_document_query_selector(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    if (argc < 1) {
+        return JS_EXCEPTION;
+    }
+
+    JSValue ptr_val = JS_GetPropertyStr(ctx, this_val, "_internal_doc_ptr");
+    int64_t ptr_int;
+    JS_ToBigInt64(ctx, &ptr_int, ptr_val);
+    JS_FreeValue(ctx, ptr_val);
+    
+    DOMDocument* doc = (DOMDocument*)(uintptr_t)ptr_int;
+    if (!doc) {
+        return JS_EXCEPTION;
+    }
+
+    const char* selector = JS_ToCString(ctx, argv[0]);
+    if (!selector) {
+        return JS_EXCEPTION;
+    }
+
+    // Start search from document element
+    DOMElement* doc_elem = dom_document_get_element(doc);
+    DOMElement* found = NULL;
+    
+    if (doc_elem) {
+        found = dom_element_query_selector(doc_elem, selector);
+    }
+    
+    JS_FreeCString(ctx, selector);
+
+    if (!found) {
+        return JS_NULL;
+    }
+
+    // Create JavaScript wrapper
+    JSValue elem_obj = JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, elem_obj, "_internal_elem_ptr",
+                     JS_NewBigInt64(ctx, (int64_t)(uintptr_t)found));
+
+    JS_SetPropertyStr(ctx, elem_obj, "setAttribute",
+                     JS_NewCFunction(ctx, js_element_set_attribute, "setAttribute", 2));
+    JS_SetPropertyStr(ctx, elem_obj, "getAttribute",
+                     JS_NewCFunction(ctx, js_element_get_attribute, "getAttribute", 1));
+    JS_SetPropertyStr(ctx, elem_obj, "querySelector",
+                     JS_NewCFunction(ctx, js_element_query_selector, "querySelector", 1));
+
+    return elem_obj;
+}
+
+static JSValue js_element_query_selector(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    if (argc < 1) {
+        return JS_EXCEPTION;
+    }
+
+    JSValue ptr_val = JS_GetPropertyStr(ctx, this_val, "_internal_elem_ptr");
+    int64_t ptr_int;
+    JS_ToBigInt64(ctx, &ptr_int, ptr_val);
+    JS_FreeValue(ctx, ptr_val);
+    
+    DOMElement* elem = (DOMElement*)(uintptr_t)ptr_int;
+    if (!elem) {
+        return JS_EXCEPTION;
+    }
+
+    const char* selector = JS_ToCString(ctx, argv[0]);
+    if (!selector) {
+        return JS_EXCEPTION;
+    }
+
+    DOMElement* found = dom_element_query_selector(elem, selector);
+    JS_FreeCString(ctx, selector);
+
+    if (!found) {
+        return JS_NULL;
+    }
+
+    // Create JavaScript wrapper
+    JSValue elem_obj = JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, elem_obj, "_internal_elem_ptr",
+                     JS_NewBigInt64(ctx, (int64_t)(uintptr_t)found));
+
+    JS_SetPropertyStr(ctx, elem_obj, "setAttribute",
+                     JS_NewCFunction(ctx, js_element_set_attribute, "setAttribute", 2));
+    JS_SetPropertyStr(ctx, elem_obj, "getAttribute",
+                     JS_NewCFunction(ctx, js_element_get_attribute, "getAttribute", 1));
+    JS_SetPropertyStr(ctx, elem_obj, "querySelector",
+                     JS_NewCFunction(ctx, js_element_query_selector, "querySelector", 1));
+
+    return elem_obj;
 }

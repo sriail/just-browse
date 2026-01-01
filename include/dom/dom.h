@@ -124,6 +124,14 @@ int dom_element_add_event_listener(DOMElement* element, const char* event_type,
  */
 int dom_element_trigger_event(DOMElement* element, const char* event_type);
 
+/**
+ * Query selector - find first element matching CSS selector
+ * @param element The element to search from (or document)
+ * @param selector The CSS selector (simplified: tag, #id, .class)
+ * @return The first matching element, or NULL if not found
+ */
+DOMElement* dom_element_query_selector(DOMElement* element, const char* selector);
+
 #ifdef __cplusplus
 }
 #endif

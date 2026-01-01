@@ -365,3 +365,65 @@ int dom_element_trigger_event(DOMElement* element, const char* event_type) {
 
     return 0;
 }
+
+// Helper function for querySelector - checks if element matches selector
+static int matches_selector(DOMElement* element, const char* selector) {
+    if (!element || !selector) {
+        return 0;
+    }
+
+    // ID selector (#id)
+    if (selector[0] == '#') {
+        const char* id = dom_element_get_attribute(element, "id");
+        return id && strcmp(id, selector + 1) == 0;
+    }
+
+    // Class selector (.class)
+    if (selector[0] == '.') {
+        const char* class_attr = dom_element_get_attribute(element, "class");
+        if (!class_attr) {
+            return 0;
+        }
+        // Simple check - full implementation would split by spaces
+        return strstr(class_attr, selector + 1) != NULL;
+    }
+
+    // Tag selector
+    const char* tag = dom_element_get_tag_name(element);
+    return tag && strcmp(tag, selector) == 0;
+}
+
+// Helper function to search DOM tree for querySelector
+static DOMElement* search_query_selector(DOMNode* node, const char* selector) {
+    if (!node) {
+        return NULL;
+    }
+
+    // Check if this node matches
+    if (node->type == NODE_ELEMENT) {
+        DOMElement* elem = (DOMElement*)node;
+        if (matches_selector(elem, selector)) {
+            return elem;
+        }
+    }
+
+    // Search children
+    DOMNode* child = node->first_child;
+    while (child) {
+        DOMElement* found = search_query_selector(child, selector);
+        if (found) {
+            return found;
+        }
+        child = child->next_sibling;
+    }
+
+    return NULL;
+}
+
+DOMElement* dom_element_query_selector(DOMElement* element, const char* selector) {
+    if (!element || !selector) {
+        return NULL;
+    }
+
+    return search_query_selector((DOMNode*)element, selector);
+}

@@ -1,6 +1,7 @@
 #include "rendering/renderer.h"
 #include "dom/dom.h"
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 
 // RmlUi integration stub
@@ -18,6 +19,12 @@ Renderer* renderer_init(int width, int height) {
     if (width <= 0 || height <= 0) {
         return NULL;
     }
+    
+    // Check for potential integer overflow
+    // Max reasonable viewport: 16384 x 16384 (reasonable limit for browsers)
+    if (width > 16384 || height > 16384) {
+        return NULL;
+    }
 
     Renderer* renderer = (Renderer*)malloc(sizeof(Renderer));
     if (!renderer) {
@@ -26,8 +33,18 @@ Renderer* renderer_init(int width, int height) {
 
     renderer->width = width;
     renderer->height = height;
-    renderer->buffer_size = width * height * 4; // RGBA
-    renderer->buffer = (unsigned char*)calloc(renderer->buffer_size, 1);
+    
+    // Use size_t for buffer size calculation to handle larger values safely
+    size_t buffer_size = (size_t)width * (size_t)height * 4; // RGBA
+    
+    // Additional overflow check
+    if (buffer_size / 4 / width != (size_t)height) {
+        free(renderer);
+        return NULL;
+    }
+    
+    renderer->buffer_size = (int)buffer_size;
+    renderer->buffer = (unsigned char*)calloc(buffer_size, 1);
 
     if (!renderer->buffer) {
         free(renderer);
@@ -76,18 +93,29 @@ int renderer_resize(Renderer* renderer, int width, int height) {
     if (!renderer || width <= 0 || height <= 0) {
         return -1;
     }
-
-    renderer->width = width;
-    renderer->height = height;
     
-    int new_size = width * height * 4;
+    // Check for potential integer overflow
+    if (width > 16384 || height > 16384) {
+        return -1;
+    }
+    
+    // Use size_t for safe calculation
+    size_t new_size = (size_t)width * (size_t)height * 4;
+    
+    // Overflow check
+    if (new_size / 4 / width != (size_t)height) {
+        return -1;
+    }
+
     unsigned char* new_buffer = (unsigned char*)realloc(renderer->buffer, new_size);
     if (!new_buffer) {
         return -1;
     }
 
+    renderer->width = width;
+    renderer->height = height;
     renderer->buffer = new_buffer;
-    renderer->buffer_size = new_size;
+    renderer->buffer_size = (int)new_size;
 
     return 0;
 }

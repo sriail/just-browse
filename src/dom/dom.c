@@ -98,6 +98,14 @@ DOMElement* dom_document_create_element(DOMDocument* doc, const char* tag_name) 
     element->node.attributes.attr_capacity = 8;
     element->node.attributes.attr_names = (char**)calloc(8, sizeof(char*));
     element->node.attributes.attr_values = (char**)calloc(8, sizeof(char*));
+    
+    if (!element->node.attributes.attr_names || !element->node.attributes.attr_values) {
+        free(element->node.attributes.attr_names);
+        free(element->node.attributes.attr_values);
+        free(element->node.name);
+        free(element);
+        return NULL;
+    }
 
     // Set as document element if this is the first element
     if (!doc->document_element) {
